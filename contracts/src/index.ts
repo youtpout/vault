@@ -1,3 +1,6 @@
-import { Add } from './Add.js';
+import { Vault } from './Vault.js';
+import { TokenA } from './TokenA.js';
+import { TokenHolder } from './TokenHolder.js';
+import { TokenStandard } from './TokenStandard.js';
 
-export { Add };
+export { Vault, TokenA, TokenStandard, TokenHolder };
