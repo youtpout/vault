@@ -75,9 +75,6 @@ describe('Vault', () => {
     });
 
     it('create vault', async () => {
-        showBalanceToken0();
-        showBalanceToken1();
-
         let amt = UInt64.from(10 * 10 ** 9);
         const txn = await Mina.transaction(senderAccount, async () => {
             AccountUpdate.fundNewAccount(senderAccount, 2);
@@ -86,10 +83,6 @@ describe('Vault', () => {
         console.log("createPool", txn.toPretty());
         await txn.prove();
         await txn.sign([senderKey, zkAppPrivateKey]).send();
-
-        showBalanceToken0();
-        showBalanceToken1();
-
         const liquidityUser = Mina.getBalance(senderAccount, zkApp.deriveTokenId());
         const expected = amt.value.add(amt.value);
         console.log("liquidity user", liquidityUser.toString());
