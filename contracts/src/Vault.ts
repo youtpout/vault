@@ -20,15 +20,21 @@ export class Vault extends TokenContractV2 {
         this.checkZeroBalanceChange(forest);
     }
 
-    @method async create(tokenA: PublicKey, amountA: UInt64, amountMina: UInt64) {
+    @method async initialize(tokenA: PublicKey) {
+        const addressA = this.tokenA.getAndRequireEquals();
+        addressA.isEmpty().assertTrue("Vault already initialised");
+        this.tokenA.set(tokenA);
+    }
+
+    @method async deposit(amountA: UInt64, amountMina: UInt64) {
         const addressA = this.tokenA.getAndRequireEquals();
 
-        addressA.isEmpty().assertTrue("Vault already initialised");
+        addressA.isEmpty().assertFalse("Vault not initialised");
 
         amountA.assertGreaterThan(UInt64.zero, "No amount A supplied");
         amountMina.assertGreaterThan(UInt64.zero, "No amount Mina supplied");
 
-        let tokenContractA = new TokenStandard(tokenA);
+        let tokenContractA = new TokenStandard(addressA);
 
         let sender = this.sender.getAndRequireSignature();
         let senderUpdate = AccountUpdate.createSigned(sender);
@@ -41,7 +47,6 @@ export class Vault extends TokenContractV2 {
         this.internal.mint({ address: sender, amount: liquidityAmount });
 
         // set default informations
-        this.tokenA.set(tokenA);
         this.liquiditySupply.set(liquidityAmount);
     }
 

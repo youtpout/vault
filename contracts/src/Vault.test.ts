@@ -74,19 +74,27 @@ describe('Vault', () => {
 
     });
 
-    it('create vault', async () => {
+    it('initialize vault', async () => {
         let amt = UInt64.from(10 * 10 ** 9);
+
+        let token = new TokenHolder(senderAccount, zkApp.deriveTokenId());
+        let token2 = new TokenHolder(zkAppAddress, zkToken0.deriveTokenId());
+
         const txn = await Mina.transaction(senderAccount, async () => {
             AccountUpdate.fundNewAccount(senderAccount, 2);
-            await zkApp.create(zkToken0Address, amt, amt);
+            await token.deploy();
+            await token2.deploy();
+            await zkApp.initialize(zkToken0Address);
+            await zkApp.approveAccountUpdate(token.self);
+            await zkToken0.approveAccountUpdate(token2.self);
         });
-        console.log("createPool", txn.toPretty());
+        console.log("initialize", txn.toPretty());
         await txn.prove();
         await txn.sign([senderKey, zkAppPrivateKey]).send();
-        const liquidityUser = Mina.getBalance(senderAccount, zkApp.deriveTokenId());
-        const expected = amt.value.add(amt.value);
-        console.log("liquidity user", liquidityUser.toString());
-        expect(liquidityUser.value).toEqual(expected);
+        /*  const liquidityUser = Mina.getBalance(senderAccount, zkApp.deriveTokenId());
+          const expected = amt.value.add(amt.value);
+          console.log("liquidity user", liquidityUser.toString());
+          expect(liquidityUser.value).toEqual(expected);*/
     });
 
 
