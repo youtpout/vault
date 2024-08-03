@@ -82,11 +82,11 @@ describe('Vault', () => {
 
         const txn = await Mina.transaction(senderAccount, async () => {
             AccountUpdate.fundNewAccount(senderAccount, 2);
-            await token.deploy();
-            await token2.deploy();
+            let account = AccountUpdate.create(senderAccount, zkApp.deriveTokenId());
+            let account2 = AccountUpdate.create(zkAppAddress, zkToken0.deriveTokenId());
             await zkApp.initialize(zkToken0Address);
-            await zkApp.approveAccountUpdate(token.self);
-            await zkToken0.approveAccountUpdate(token2.self);
+            await zkApp.approveAccountUpdate(account);
+            await zkToken0.approveAccountUpdate(account2);
         });
         console.log("initialize", txn.toPretty());
         await txn.prove();
