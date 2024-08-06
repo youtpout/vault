@@ -1,4 +1,4 @@
-import { Account, AccountUpdate, Bool, Field, Mina, PrivateKey, PublicKey, TokenContract, UInt64 } from 'o1js';
+import { Account, AccountUpdate, Bool, Field, Int64, Mina, PrivateKey, PublicKey, TokenContract, UInt64 } from 'o1js';
 
 import { TokenStandard, TokenHolder, Vault, TokenA } from './index.js';
 
@@ -77,8 +77,20 @@ describe('Vault', () => {
     it('initialize vault', async () => {
         let amt = UInt64.from(10 * 10 ** 9);
 
-        let token = new TokenHolder(senderAccount, zkApp.deriveTokenId());
-        let token2 = new TokenHolder(zkAppAddress, zkToken0.deriveTokenId());
+        const txn = await Mina.transaction(senderAccount, async () => {
+            AccountUpdate.fundNewAccount(senderAccount, 2);
+            let account = AccountUpdate.create(senderAccount, zkApp.deriveTokenId());
+            let account2 = AccountUpdate.create(zkAppAddress, zkToken0.deriveTokenId());
+            await zkApp.initialize(zkToken0Address);
+            await zkApp.approveAccountUpdate(account);
+            await zkToken0.approveAccountUpdate(account2);
+        });
+        //console.log("initialize", txn.toPretty());
+        await txn.prove();
+        await txn.sign([senderKey, zkAppPrivateKey]).send();
+    });
+
+    it('deposit vault', async () => {
 
         const txn = await Mina.transaction(senderAccount, async () => {
             AccountUpdate.fundNewAccount(senderAccount, 2);
@@ -88,13 +100,27 @@ describe('Vault', () => {
             await zkApp.approveAccountUpdate(account);
             await zkToken0.approveAccountUpdate(account2);
         });
-        console.log("initialize", txn.toPretty());
         await txn.prove();
         await txn.sign([senderKey, zkAppPrivateKey]).send();
-        /*  const liquidityUser = Mina.getBalance(senderAccount, zkApp.deriveTokenId());
-          const expected = amt.value.add(amt.value);
-          console.log("liquidity user", liquidityUser.toString());
-          expect(liquidityUser.value).toEqual(expected);*/
+
+        let amt = UInt64.from(10 * 10 ** 9);
+
+        const txn2 = await Mina.transaction(senderAccount, async () => {
+            await zkApp.deposit(amt, amt);
+        });
+        console.log("deposit", txn2.toPretty());
+        await txn2.prove();
+        await txn2.sign([senderKey]).send();
+        const liquidityUser = Mina.getBalance(senderAccount, zkApp.deriveTokenId());
+        const expected = amt.value.add(amt.value);
+        console.log("liquidity user", liquidityUser.toString());
+        expect(liquidityUser.value).toEqual(expected);
+
+        const balance = Mina.getBalance(zkAppAddress);
+        expect(balance.value).toEqual(amt.value);
+
+        const balanceToken = Mina.getBalance(zkAppAddress, zkToken0.deriveTokenId());
+        expect(balance.value).toEqual(amt.value);
     });
 
 

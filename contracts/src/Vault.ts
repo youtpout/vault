@@ -1,5 +1,5 @@
-import { Field, SmartContract, state, State, method, TokenContract, PublicKey, AccountUpdateForest, DeployArgs, UInt64, AccountUpdate, Provable, TokenContractV2 } from 'o1js';
-import { TokenStandard, TokenHolder } from './index.js';
+import { Field, SmartContract, state, State, method, TokenContract, PublicKey, AccountUpdateForest, DeployArgs, UInt64, AccountUpdate, Provable, TokenContractV2, Int64 } from 'o1js';
+import { TokenStandard, TokenHolder, TokenA } from './index.js';
 
 // minimum liquidity permanently locked in the pool
 export const minimunLiquidity: UInt64 = new UInt64(10 ** 3);
@@ -34,13 +34,14 @@ export class Vault extends TokenContractV2 {
         amountA.assertGreaterThan(UInt64.zero, "No amount A supplied");
         amountMina.assertGreaterThan(UInt64.zero, "No amount Mina supplied");
 
-        let tokenContractA = new TokenStandard(addressA);
+        let tokenContractA = new TokenA(addressA);
+        let dexX = AccountUpdate.create(this.address, tokenContractA.deriveTokenId());
 
-        let sender = this.sender.getAndRequireSignature();
-        let senderUpdate = AccountUpdate.createSigned(sender);
+        let sender = this.sender.getUnconstrained();
+        let account = AccountUpdate.createSigned(sender);
+        await tokenContractA.transfer(sender, dexX, amountA);
+        await account.send({ to: this, amount: amountMina });
 
-        await tokenContractA.transfer(sender, this.address, amountA);
-        await senderUpdate.send({ to: this, amount: amountMina });
 
         let liquidityAmount = amountA.add(amountMina);
         // mint token
