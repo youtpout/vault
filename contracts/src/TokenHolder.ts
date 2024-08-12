@@ -13,6 +13,7 @@ export class TokenHolder extends SmartContract {
         amount: UInt64
     ) {
         const balance = this.account.balance.getAndRequireEquals();
+        Provable.log("balance", balance);
         balance.assertGreaterThanOrEqual(amount, "Balance less than withdrawal amount");
 
         this.balance.subInPlace(amount);
