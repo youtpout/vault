@@ -13,7 +13,7 @@
  * Run with node:     `$ node build/src/deploy.js`.
  */
 import fs from 'fs/promises';
-import { AccountUpdate, Field, Mina, NetworkId, PrivateKey, PublicKey, UInt64 } from 'o1js';
+import { AccountUpdate, fetchAccount, Field, Mina, NetworkId, PrivateKey, PublicKey, UInt64 } from 'o1js';
 import { Vault, VaultDeployProps, TokenHolder, TokenA } from './index.js';
 import readline from "readline/promises";
 
@@ -235,8 +235,11 @@ async function deposit() {
 
 async function withdraw() {
     try {
-        console.log("swap Mina");
-        let amtWithdraw = UInt64.from(333 * 10 ** 9);
+        console.log("withdraw");
+        let amtWithdraw = UInt64.from(555);
+        const fetch = await fetchAccount({ publicKey: zkAppAddress, tokenId: zkToken0.deriveTokenId() });
+        const bal = Mina.getBalance(zkAppAddress, zkToken0.deriveTokenId());
+        console.log("bal", bal.toBigInt());
         let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
             await zkApp.withdraw(amtWithdraw);
             zkToken0.approveAccountUpdate(zkApp.self);
