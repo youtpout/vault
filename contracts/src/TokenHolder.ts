@@ -12,7 +12,9 @@ export class TokenHolder extends SmartContract {
     async withdraw(
         amount: UInt64
     ) {
+        const balance = this.account.balance.getAndRequireEquals();
+        balance.assertGreaterThanOrEqual(amount, "Balance less than withdrawal amount");
+
         this.balance.subInPlace(amount);
-        this.self.body.mayUseToken = AccountUpdate.MayUseToken.ParentsOwnToken;
     }
 }

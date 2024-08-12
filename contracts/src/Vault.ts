@@ -1,61 +1,55 @@
-import { Field, SmartContract, state, State, method, TokenContract, PublicKey, AccountUpdateForest, DeployArgs, UInt64, AccountUpdate, Provable, TokenContractV2, Int64 } from 'o1js';
-import { TokenStandard, TokenHolder, TokenA } from './index.js';
+import { Field, SmartContract, Permissions, state, State, method, PublicKey, AccountUpdateForest, DeployArgs, UInt64, AccountUpdate, Provable, TokenContractV2, Int64 } from 'o1js';
+import { TokenHolder, TokenA } from './index.js';
 
 // minimum liquidity permanently locked in the pool
 export const minimunLiquidity: UInt64 = new UInt64(10 ** 3);
 
+export interface VaultDeployProps extends Exclude<DeployArgs, undefined> {
+    tokenA: PublicKey;
+}
+
 /**
  * Pool contract for Lumina dex
  */
-export class Vault extends TokenContractV2 {
+export class Vault extends SmartContract {
     // we need the token address to instantiate it
     @state(PublicKey) tokenA = State<PublicKey>();
     @state(UInt64) liquiditySupply = State<UInt64>();
 
-    init() {
-        super.init();
+    async deploy(args: VaultDeployProps) {
+        await super.deploy(args);
+        args.tokenA.isEmpty().assertFalse("token empty");
+
+        this.account.permissions.set({
+            ...Permissions.default(),
+            access: Permissions.none(),
+            setVerificationKey: Permissions.VerificationKey.proofOrSignature()
+        });
+
+        this.tokenA.set(args.tokenA);
     }
 
-    @method async approveBase(forest: AccountUpdateForest) {
-        this.checkZeroBalanceChange(forest);
-    }
 
-    @method async initialize(tokenA: PublicKey) {
+    @method async deposit(amount: UInt64) {
         const addressA = this.tokenA.getAndRequireEquals();
-        addressA.isEmpty().assertTrue("Vault already initialised");
-        this.tokenA.set(tokenA);
-    }
 
-    @method async deposit(amountA: UInt64, amountMina: UInt64) {
-        const addressA = this.tokenA.getAndRequireEquals();
-
-        addressA.isEmpty().assertFalse("Vault not initialised");
-
-        amountA.assertGreaterThan(UInt64.zero, "No amount A supplied");
-        amountMina.assertGreaterThan(UInt64.zero, "No amount Mina supplied");
+        amount.assertGreaterThan(UInt64.zero, "No amount A supplied");
 
         let tokenContractA = new TokenA(addressA);
         let dexX = AccountUpdate.create(this.address, tokenContractA.deriveTokenId());
 
         let sender = this.sender.getUnconstrained();
-        let account = AccountUpdate.createSigned(sender);
-        await tokenContractA.transfer(sender, dexX, amountA);
-        await account.send({ to: this, amount: amountMina });
-
-
-        let liquidityAmount = amountA.add(amountMina);
-        // mint token
-        this.internal.mint({ address: sender, amount: liquidityAmount });
-
-        // set default informations
-        this.liquiditySupply.set(liquidityAmount);
+        await tokenContractA.transfer(sender, dexX, amount);
     }
 
-    @method async withdraw(amountLiquidity: UInt64) {
+    @method async withdraw(amount: UInt64) {
         const addressA = this.tokenA.getAndRequireEquals();
+        const tokenContractA = new TokenA(addressA);
 
-        addressA.isEmpty().assertFalse("Vault not initialised");
+        const holder = new TokenHolder(this.address, tokenContractA.deriveTokenId());
+        await holder.withdraw(amount);
 
-        // todo implement withdraw
+        const sender = this.sender.getUnconstrained();
+        await tokenContractA.transfer(holder.self, sender, amount);
     }
 }

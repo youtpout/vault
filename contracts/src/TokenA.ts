@@ -7,7 +7,7 @@ export class TokenA extends TokenContractV2 {
 
     async deploy(args?: DeployArgs) {
         await super.deploy(args);
-        this.account.tokenSymbol.set("TTA");
+        this.account.tokenSymbol.set("TVA");
 
         // make account non-upgradable forever
         this.account.permissions.set({
@@ -21,10 +21,6 @@ export class TokenA extends TokenContractV2 {
 
     @method async init() {
         super.init();
-    }
-
-    @method async approveSend(amount: UInt64) {
-        this.balance.subInPlace(amount);
     }
 
     @method async approveBase(forest: AccountUpdateForest) {

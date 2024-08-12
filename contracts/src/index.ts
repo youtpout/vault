@@ -1,6 +1,5 @@
-import { Vault } from './Vault.js';
+import { Vault, VaultDeployProps } from './Vault.js';
 import { TokenA } from './TokenA.js';
 import { TokenHolder } from './TokenHolder.js';
-import { TokenStandard } from './TokenStandard.js';
 
-export { Vault, TokenA, TokenStandard, TokenHolder };
+export { Vault, TokenA, TokenHolder, VaultDeployProps };
