@@ -1,10 +1,10 @@
 import { Account, AccountUpdate, Bool, Field, Int64, Mina, PrivateKey, PublicKey, TokenContract, UInt64 } from 'o1js';
 
-import { TokenHolder, Vault, TokenA, VaultDeployProps } from './index.js';
+import { TokenHolder, Vault, TokenA, VaultDeployProps, TokenHolderV2, VaultV2, VaultV2DeployProps } from './index.js';
 
 let proofsEnabled = false;
 
-describe('Vault', () => {
+describe('Vault v2', () => {
     let deployerAccount: Mina.TestPublicKey,
         deployerKey: PrivateKey,
         senderAccount: Mina.TestPublicKey,
@@ -15,18 +15,18 @@ describe('Vault', () => {
         aliceKey: PrivateKey,
         zkAppAddress: PublicKey,
         zkAppPrivateKey: PrivateKey,
-        zkApp: Vault,
+        zkApp: VaultV2,
         zkToken0Address: PublicKey,
         zkToken0PrivateKey: PrivateKey,
         zkToken0: TokenA,
-        tokenHolder0: TokenHolder;
+        tokenHolder: TokenHolderV2;
 
     beforeAll(async () => {
         if (proofsEnabled) {
             console.time('compile pool');
             const tokenKey = await TokenA.compile();
-            const key = await Vault.compile();
-            await TokenHolder.compile();
+            const key = await VaultV2.compile();
+            await TokenHolderV2.compile();
             console.timeEnd('compile pool');
         }
     });
@@ -42,13 +42,13 @@ describe('Vault', () => {
 
         zkAppPrivateKey = PrivateKey.random();
         zkAppAddress = zkAppPrivateKey.toPublicKey();
-        zkApp = new Vault(zkAppAddress);
+        zkApp = new VaultV2(zkAppAddress);
 
         zkToken0PrivateKey = PrivateKey.random();
         zkToken0Address = zkToken0PrivateKey.toPublicKey();
         zkToken0 = new TokenA(zkToken0Address);
 
-        const args: VaultDeployProps = { tokenA: zkToken0Address };
+        const args: VaultV2DeployProps = { tokenA: zkToken0Address };
         let txn = await Mina.transaction(deployerAccount, async () => {
             AccountUpdate.fundNewAccount(deployerAccount, 2);
             await zkApp.deploy(args);
@@ -58,7 +58,7 @@ describe('Vault', () => {
         // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
         await txn.sign([deployerKey, zkAppPrivateKey, zkToken0PrivateKey]).send();
 
-        let tokenHolder = new TokenHolder(zkAppAddress, zkToken0.deriveTokenId());
+        tokenHolder = new TokenHolderV2(zkAppAddress, zkToken0.deriveTokenId());
         txn = await Mina.transaction(senderAccount, async () => {
             AccountUpdate.fundNewAccount(senderAccount, 1);
             await tokenHolder.deploy();

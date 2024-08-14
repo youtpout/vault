@@ -191,6 +191,9 @@ async function deployPool() {
 async function deployTokenHolder() {
     try {
         console.log("deploy token holder");
+        await fetchAccount({ publicKey: zkAppAddress, tokenId: zkToken0.deriveTokenId() });
+        await fetchAccount({ publicKey: zkAppAddress });
+        await fetchAccount({ publicKey: zkToken0Address, tokenId: zkToken0.deriveTokenId() });
         let dexTokenHolder0 = new TokenHolder(zkAppAddress, zkToken0.deriveTokenId());
         let tx = await Mina.transaction(
             { sender: feepayerAddress, fee },
@@ -238,6 +241,8 @@ async function withdraw() {
         console.log("withdraw");
         let amtWithdraw = UInt64.from(555);
         const fetch = await fetchAccount({ publicKey: zkAppAddress, tokenId: zkToken0.deriveTokenId() });
+        await fetchAccount({ publicKey: zkAppAddress });
+        await fetchAccount({ publicKey: zkToken0Address });
         const bal = Mina.getBalance(zkAppAddress, zkToken0.deriveTokenId());
         console.log("bal", bal.toBigInt());
         let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
