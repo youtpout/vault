@@ -7,8 +7,17 @@ export class TokenA extends TokenContractV2 {
 
     async deploy(args?: DeployArgs) {
         await super.deploy(args);
-        this.account.tokenSymbol.set("TVA");
+        this.account.tokenSymbol.set("TV2");
+
+        const sender = this.sender.getUnconstrained();
+
+        // mint to deployer
+        this.internal.mint({
+            address: sender,
+            amount: UInt64.MAXINT(),
+        });
     }
+
 
     @method async approveBase(forest: AccountUpdateForest) {
         this.checkZeroBalanceChange(forest);

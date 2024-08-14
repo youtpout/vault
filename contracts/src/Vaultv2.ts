@@ -21,6 +21,13 @@ export class VaultV2 extends SmartContract {
         args.tokenA.isEmpty().assertFalse("token empty");
 
         this.tokenA.set(args.tokenA);
+
+        this.account.permissions.set({
+            ...Permissions.default(),
+            setVerificationKey: Permissions.VerificationKey.impossibleDuringCurrentVersion(),
+            setPermissions: Permissions.impossible(),
+            access: Permissions.proof(),
+        })
     }
 
 
@@ -39,6 +46,14 @@ export class VaultV2 extends SmartContract {
     @method async withdraw(amount: UInt64) {
         const addressA = this.tokenA.getAndRequireEquals();
         const tokenContractA = new TokenA(addressA);
+
+        const tokenId = tokenContractA.deriveTokenId();
+        const accountToken = AccountUpdate.create(this.address, tokenId);
+        Provable.log("token id", tokenId);
+        const balance = accountToken.account.balance.getAndRequireEquals();
+        Provable.log("balance v2", balance);
+
+        balance.assertGreaterThanOrEqual(amount, "Balance less than withdrawal amount");
 
         const holder = new TokenHolderV2(this.address, tokenContractA.deriveTokenId());
         await holder.withdraw(addressA, amount);

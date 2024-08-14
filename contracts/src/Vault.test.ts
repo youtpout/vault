@@ -50,7 +50,7 @@ describe('Vault', () => {
 
         const args: VaultDeployProps = { tokenA: zkToken0Address };
         let txn = await Mina.transaction(deployerAccount, async () => {
-            AccountUpdate.fundNewAccount(deployerAccount, 2);
+            AccountUpdate.fundNewAccount(deployerAccount, 3);
             await zkApp.deploy(args);
             await zkToken0.deploy();
         });
@@ -125,12 +125,12 @@ describe('Vault', () => {
 
     async function mintToken(user: PublicKey) {
         // update transaction
-        const txn = await Mina.transaction(senderAccount, async () => {
-            AccountUpdate.fundNewAccount(senderAccount, 1);
-            await zkToken0.mintTo(user, UInt64.from(1000 * 10 ** 9));
+        const txn = await Mina.transaction(deployerAccount, async () => {
+            AccountUpdate.fundNewAccount(deployerAccount, 1);
+            await zkToken0.transfer(deployerAccount, user, UInt64.from(1000 * 10 ** 9));
         });
         await txn.prove();
-        await txn.sign([senderKey, zkToken0PrivateKey]).send();
+        await txn.sign([deployerKey, zkToken0PrivateKey]).send();
 
     }
 
